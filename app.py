@@ -12,36 +12,45 @@ migrate = Migrate(app,db)
 db.init_app(app)
 api= Api(app)
 
-@app.route('/')
-def index():
-    header = '<h1>This is the first page</h1>'
-    return header
 
-@app.route('/users',methods=['GET','POST'])
-def users():
-    if request.method == 'GET':
+class Home(Resource):
+    def get(self):
+        header = '<h1>This is the first page</h1>'
+        return header
+    
+  
+api.add_resource(Home, "/")
+
+class Users(Resource):
+    def get(self):
         users = [user.to_dict() for user in User.query.all()]
         response = make_response(
             users,
             200
         )
         return response
-    elif request.method == 'POST':
+
+    def post(self):
         new_user = User(
-            name= request.form.get('name')
+            name=request.form.get('name')
         )
         db.session.add(new_user)
         db.session.commit()
         user_dict = new_user.to_dict()
-        response= make_response(
+        response = make_response(
             user_dict,
             201
         )
         return response
-@app.route('/users/<int:id>',methods=['GET','DELETE','PATCH'])
-def single_users(id):
-    user = User.query.filter_by(id=id).first()
-    if request.method == 'GET':
+
+
+api.add_resource(Users, "/users")
+   
+class Single_user(Resource):
+
+    
+    def get(self,id):
+        user = User.query.filter_by(id=id).first()
         if user:
             body=user.to_dict()
             status = 200
@@ -51,7 +60,7 @@ def single_users(id):
             }
             status = 404
         return response
-    elif request.method == 'DELETE':
+    def delete(self):
         db.session.delete(user)
         db.session.commit()
         message={
@@ -63,7 +72,7 @@ def single_users(id):
         )
         return response
 
-    elif request.method == 'PATCH':
+    def patch(self):
         for attr in request.form:
             setattr(review, attr, request.form.get(attr))
 
@@ -78,6 +87,6 @@ def single_users(id):
         )
 
         return response
-   
+api.add_resource(Single_user,"/users/<int:id>")  
 if __name__ == '__main__':
     app.run(port=8000,debug=True)
